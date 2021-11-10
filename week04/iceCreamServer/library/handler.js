@@ -17,5 +17,33 @@ const read = (filePath) => {
     .catch((err) => err);
 };
 
-read("./mimetypes.json").then(console.log).catch(console.log);
-read("./handler.js").then(console.log).catch(console.log);
+const send = (res, resource) => {
+  res.writeHead(200, {
+    "Content-Type": resource.mime.type,
+    "Content-Length": Buffer.byteLength(
+      resource.fileData,
+      resource.mime.encoding
+    ),
+  });
+  res.end(resource.fileData, resource.mime.encoding);
+};
+
+const sendJson = (res, jsonResource, statusCode = 200) => {
+  const jsonData = JSON.stringify(jsonResource);
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json",
+  });
+  res.end(jsonData);
+};
+
+const isIn = (route, ...routes) => {
+  for (let start of routes) {
+    if (route.startsWith(start)) return true;
+  }
+  return false;
+};
+
+module.exports = { read, send, sendJson, isIn };
+
+// read("./mimetypes.json").then(console.log).catch(console.log);
+// read("./handler.js").then(console.log).catch(console.log);
