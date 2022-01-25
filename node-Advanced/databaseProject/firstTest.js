@@ -13,16 +13,171 @@ const options = {
 const db = new MariaDb(options);
 
 // db.doQuery("select * from employee").then(console.log).catch(console.log);
+function printWorkers(employees) {
+  for (let person of employees) {
+    console.log(
+      `${person.employeeId}:${person.firstname} ${person.lastname}` +
+        ` Dept: ${person.department}, ${person.salary} €`
+    );
+  }
+}
 
 async function getAll() {
   try {
     const result = await db.doQuery("select * from employee");
     if (result.resultSet) {
-      console.log(result.queryResult);
+      printWorkers(result.queryResult);
     }
   } catch (err) {
     console.log(err);
   }
 }
 
-getAll();
+async function get(id) {
+  try {
+    const result = await db.doQuery(
+      "select * from employee where employeeId=?",
+      [id]
+    );
+    printWorkers(result.queryResult);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function add(person) {
+  try {
+    const parameters = [
+      person.employeeId,
+      person.firstname,
+      person.lastname,
+      person.department,
+      person.salary,
+    ];
+
+    // const parameters = Object.values(person);
+    const sql = "insert into employee values(?,?,?,?,?)";
+    const status = await db.doQuery(sql, parameters);
+    console.log("status", status);
+  } catch (err) {
+    console.log(err);
+  }
+}
+async function add2(person) {
+  try {
+    const parameters = [
+      person.lastname,
+      person.firstname,
+      person.department,
+      person.salary,
+      person.employeeId,
+    ];
+
+    const sql =
+      "insert into employee (lastname,firstname,department,salary,employeeId) " +
+      "values(?,?,?,?,?)";
+    const status = await db.doQuery(sql, parameters);
+    console.log("status", status);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function remove(id) {
+  try {
+    const sql = "delete from employee where employeeId=?";
+    const status = await db.doQuery(sql, [id]);
+    console.log("removal status", status);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+async function update(person) {
+  try {
+    const sql =
+      "update employee set firstname=?, lastname=?, department=?, salary=? " +
+      "where employeeId=?";
+    const parameters = [
+      person.firstname,
+      person.lastname,
+      person.department,
+      person.salary,
+      person.employeeId,
+    ];
+
+    const status = await db.doQuery(sql, parameters);
+    console.log("update status:", status.queryResult.rowsChanged);
+  } catch (err) {
+    console.log(err);
+  }
+}
+async function update2(person) {
+  try {
+    const sql =
+      "update employee set firstname=?, lastname=?, department=?, salary=? " +
+      "where employeeId=?";
+    const parameters = [
+      person.firstname,
+      person.lastname,
+      person.department,
+      person.salary,
+      person.employeeId,
+    ];
+    const result = await db.doQuery(
+      "select employeeId from employee where employeeId=?",
+      [person.employeeId]
+    );
+    if (result.queryResult.length === 0) {
+      console.log("nothing to update");
+    } else {
+      const status = await db.doQuery(sql, parameters);
+      console.log("update status:", status.queryResult.rowsChanged);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+async function run() {
+  console.log("###### get All #######");
+  await getAll();
+  console.log("###### get 1 #######");
+  await get(1);
+  console.log("###### get 2 #######");
+  await get(2);
+
+  console.log("###### remove 77 #######");
+  await remove(77);
+  console.log("###### add #######");
+  const newEmp = {
+    employeeId: 33,
+    firstname: "Max",
+    lastname: "Ver",
+    department: "Red",
+    salary: 9999,
+  };
+  await add2(newEmp);
+  console.log("###### removing 7,33,44 #######");
+  await remove(7);
+  await remove(33);
+  await remove(44);
+  await getAll();
+  const updatedEmp = {
+    employeeId: 5,
+    firstname: "Maxi",
+    lastname: "Ver",
+    department: "Red",
+    salary: 5990,
+  };
+  await update(updatedEmp);
+  await getAll();
+  update2({
+    employeeId: 55,
+    firstname: "Maxi",
+    lastname: "Ver",
+    department: "Red",
+    salary: 5990,
+  });
+  await getAll();
+}
+run();
